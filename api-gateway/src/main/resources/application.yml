@@ -1,0 +1,129 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+
+  # Redis for rate limiting
+#  data:
+#    redis:
+#      host: localhost
+#      port: 6379
+#      connect-timeout: 2s
+#      timeout: 2s
+
+  cloud:
+    gateway:
+      # Global default filters applied to every route
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+        - name: RequestRateLimiter
+          args:
+            redis-rate-limiter.replenishRate: 10      # requests/sec baseline
+            redis-rate-limiter.burstCapacity: 20      # max burst
+            redis-rate-limiter.requestedTokens: 1
+            key-resolver: "#{@ipKeyResolver}"
+
+      routes:
+        # ── Order Service ──────────────────────────────────────────
+        - id: order-service
+          # lb:// tells Spring Cloud LoadBalancer to resolve via Eureka
+          uri: lb://order-service
+          predicates:
+            - Path=/orders/**
+          filters:
+            - StripPrefix=0
+            - name: JwtAuthFilter
+            - name: CircuitBreaker
+              args:
+                name: order-service-cb
+                fallbackUri: forward:/fallback/orders
+
+        # ── Inventory Service ───────────────────────────────────────
+        - id: inventory-service
+          uri: lb://inventory-service
+          predicates:
+            - Path=/inventory/**
+          filters:
+            - StripPrefix=0
+            - name: JwtAuthFilter
+            - name: CircuitBreaker
+              args:
+                name: inventory-service-cb
+                fallbackUri: forward:/fallback/inventory
+
+        # ── Auth endpoint — no JWT filter, no rate limit ────────────
+        - id: auth-route
+          uri: http://localhost:8080   # handled internally
+          predicates:
+            - Path=/auth/**
+
+      # CORS at gateway level
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://admin:secret@localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+
+# Resilience4j circuit breaker config
+resilience4j:
+  circuitbreaker:
+    instances:
+      order-service-cb:
+        slidingWindowSize: 10
+        failureRateThreshold: 50           # open after 50% failures
+        waitDurationInOpenState: 10s       # stay open 10s before half-open
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+      inventory-service-cb:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+  timelimiter:
+    instances:
+      order-service-cb:
+        timeoutDuration: 5s
+      inventory-service-cb:
+        timeoutDuration: 5s
+
+# JWT config — keep secret in env var in production
+app:
+  jwt:
+    secret: "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970"
+    expiration-ms: 86400000   # 24h
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,gateway
+  endpoint:
+    health:
+      show-details: always
+    gateway:
+      enabled: true
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    com.example.gateway: DEBUG
