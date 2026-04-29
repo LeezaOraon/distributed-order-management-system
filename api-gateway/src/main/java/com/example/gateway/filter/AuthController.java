@@ -16,7 +16,7 @@ import java.util.Map;
  *
  * In production: replace with real user store + password hashing.
  */
-//@RestController
+@RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
 @Slf4j

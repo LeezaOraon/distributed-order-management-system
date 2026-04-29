@@ -8,23 +8,36 @@ spring:
   cloud:
     gateway:
       routes:
+        - id: auth-route
+          uri: http://localhost:8080
+          predicates:
+            - Path=/auth/**
+
         - id: order-service
           uri: lb://order-service
           predicates:
             - Path=/api/orders/**
+          filters:
+            - name: JwtAuthFilter
 
         - id: inventory-service
           uri: lb://inventory-service
           predicates:
             - Path=/api/inventory/**
+          filters:
+            - name: JwtAuthFilter
 
 eureka:
   client:
     service-url:
       defaultZone: http://admin:secret@localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
 
-
-
+app:
+  jwt:
+    secret: "mysecretkeymysecretkeymysecretkey123"
+    expiration-ms: 86400000
 
 #server:
 #  port: 8080
