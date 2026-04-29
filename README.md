@@ -103,17 +103,6 @@ mvn spring-boot:run
 
 ---
 
-## Progress
-
-- [x] Week 1: Project setup, Docker Compose, multi-module Maven
-- [ ] Week 1: Core microservices
-- [ ] Week 1: Eureka + Feign Client
-- [ ] Week 2: API Gateway + Load Balancer
-- [ ] Week 3: Event-Driven with Kafka
-- [ ] Week 4: Monitoring, Testing, Deployment
-
----
-
 ## Notes
 
 - Project is under active development 
