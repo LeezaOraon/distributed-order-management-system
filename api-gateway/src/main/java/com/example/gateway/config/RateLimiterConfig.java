@@ -4,10 +4,11 @@ import org.springframework.cloud.gateway.filter.ratelimit.KeyResolver;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import reactor.core.publisher.Mono;
+import org.springframework.context.annotation.Primary;
 
 import java.util.Objects;
 
-//@Configuration
+@Configuration
 public class RateLimiterConfig {
 
     /**
@@ -16,6 +17,7 @@ public class RateLimiterConfig {
      * by reading the X-Auth-User header instead.
      */
     @Bean
+    @Primary
     public KeyResolver ipKeyResolver() {
         return exchange -> Mono.just(
                 Objects.requireNonNull(

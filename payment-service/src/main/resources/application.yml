@@ -1,27 +1,20 @@
 server:
-  port: 8082
-  error:
-    include-message: always
-    include-binding-errors: always
+  port: 8083
 
 spring:
   application:
-    name: inventory-service
-
+    name: payment-service
   datasource:
-    url: jdbc:h2:mem:inventorydb
+    url: jdbc:h2:mem:paymentdb
     driver-class-name: org.h2.Driver
     username: sa
     password:
-
   jpa:
     hibernate:
       ddl-auto: update
-
   h2:
     console:
       enabled: true
-
   kafka:
     bootstrap-servers: localhost:9092
 
@@ -38,6 +31,9 @@ app:
     topics:
       order-events: order-events
       payment-events: payment-events
+  # Mock payment: fail if total > this threshold (simulates declined card)
+  payment:
+    failure-threshold: 9999.00
 
 management:
   endpoints:

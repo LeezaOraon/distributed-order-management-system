@@ -3,6 +3,7 @@ package com.example.orderservice;
 import com.example.orderservice.dto.OrderRequest;
 import com.example.orderservice.dto.OrderResponse;
 import com.example.orderservice.exception.ResourceNotFoundException;
+import com.example.orderservice.messaging.OrderEventProducer;
 import com.example.orderservice.model.Order;
 import com.example.orderservice.repository.OrderRepository;
 import com.example.orderservice.service.OrderService;
@@ -27,6 +28,9 @@ class OrderServiceTest {
 
     @Mock
     private OrderRepository orderRepository;
+
+    @Mock
+    private OrderEventProducer orderEventProducer;
 
     @InjectMocks
     private OrderService orderService;

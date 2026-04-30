@@ -1,26 +1,10 @@
 server:
   port: 8081
 
-#spring:
-#  application:
-#    name: order-service
-#  datasource:
-#    url: jdbc:postgresql://localhost:5432/order_db
-#    username: admin
-#    password: secret
-#    driver-class-name: org.postgresql.Driver
-#  jpa:
-#    hibernate:
-#      ddl-auto: update
-#    show-sql: true
-#    properties:
-#      hibernate:
-#        dialect: org.hibernate.dialect.PostgreSQLDialect
-#        format_sql: true
-
 spring:
   application:
     name: order-service
+
   datasource:
     url: jdbc:h2:mem:testdb
     driver-class-name: org.h2.Driver
@@ -35,6 +19,24 @@ spring:
     console:
       enabled: true
 
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: order-service-group
+      auto-offset-reset: earliest
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+# Topic names (shared across services)
+app:
+  kafka:
+    topics:
+      order-events: order-events
+      payment-events: payment-events
+      inventory-events: inventory-events
+      notification-events: notification-events
+
 management:
   endpoints:
     web:
@@ -47,6 +49,7 @@ management:
 logging:
   level:
     com.example: DEBUG
+    org.apache.kafka: WARN
 
 eureka:
   client:

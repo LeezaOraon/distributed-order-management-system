@@ -5,8 +5,20 @@ spring:
   application:
     name: api-gateway
 
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
   cloud:
     gateway:
+      default-filters:
+        - name: RequestRateLimiter
+          args:
+            redis-rate-limiter.replenishRate: 5     # 5 req/sec
+            redis-rate-limiter.burstCapacity: 10    # max burst
+            redis-rate-limiter.requestedTokens: 1
+            key-resolver: "#{@ipKeyResolver}"
       routes:
         - id: auth-route
           uri: http://localhost:8080
@@ -19,6 +31,10 @@ spring:
             - Path=/api/orders/**
           filters:
             - name: JwtAuthFilter
+            - name: CircuitBreaker
+              args:
+                name: order-service-cb
+                fallbackUri: forward:/fallback/orders
 
         - id: inventory-service
           uri: lb://inventory-service
@@ -26,6 +42,10 @@ spring:
             - Path=/api/inventory/**
           filters:
             - name: JwtAuthFilter
+            - name: CircuitBreaker
+              args:
+                name: inventory-service-cb
+                fallbackUri: forward:/fallback/inventory
 
 eureka:
   client:
@@ -38,6 +58,19 @@ app:
   jwt:
     secret: "mysecretkeymysecretkeymysecretkey123"
     expiration-ms: 86400000
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      order-service-cb:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+
+      inventory-service-cb:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
 
 #server:
 #  port: 8080
