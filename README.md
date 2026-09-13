@@ -522,32 +522,6 @@ Notable settings, all in each service's `application.yml`:
 
 ---
 
-## Known Limitations
-
-This is a learning project. The following are known and unimplemented:
-
-1. **Stock is not reserved during order placement.** `inventory-service` has no `order-events`
-   consumer, so the rollback releases a reservation that was never made.
-2. **Orders never reach `CONFIRMED`.** `order-service` only handles `PaymentFailed`; the
-   `PaymentSuccess` path is not wired up.
-3. **No transactional outbox.** `placeOrder` saves then publishes — a crash between the two
-   loses the event.
-4. **No retries or dead-letter topic.** `notification-service` swallows exceptions, so a failed
-   email is lost silently.
-5. **Inventory release is not idempotent** — a duplicate `PaymentFailed` over-releases stock.
-6. **`reserveStock` has a race condition** — concurrent requests can oversell.
-7. **Topics are auto-created with one partition**, so `setConcurrency(2)` leaves a thread idle.
-8. **H2 in-memory** — data is lost on restart, and the two `order-service` instances use
-   *separate* databases, so the load-balancing demo shows routing, not shared state.
-9. **Secrets are committed** — JWT signing key, Eureka credentials and SMTP credentials are in
-   `application.yml` files and must be externalised and rotated.
-10. **`/auth/login` is a stub** — any non-blank password issues a token, and the caller chooses
-    their own role.
-
-See `INTERVIEW_GUIDE.md` for the full analysis and the fixes.
-
----
-
 ## Project Structure
 
 ```
@@ -561,6 +535,5 @@ distributed-order-management-system/
 ├── docker-compose.yml     # Kafka, ZooKeeper, Redis, Postgres, Kafka UI
 ├── init-db.sql            # Postgres schema provisioning (not yet used)
 ├── smoke-test.sh          # Direct-to-service smoke tests
-├── INTERVIEW_GUIDE.md     # Architecture deep dive and interview prep
 └── pom.xml                # Parent POM
 ```
